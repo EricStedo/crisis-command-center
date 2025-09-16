@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisCommand Center - Firebase Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2d1b00 0%, #4d2d00 50%, #1a0f00 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(255, 69, 0, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 69, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+            background: linear-gradient(45deg, #ff4500, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .firebase-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .firebase-connected { background: rgba(0, 255, 0, 0.2); border: 1px solid #00ff00; }
+        .firebase-connecting { background: rgba(255, 165, 0, 0.2); border: 1px solid #ffa500; }
+        .firebase-error { background: rgba(255, 0, 0, 0.2); border: 1px solid #ff0000; }
+
+        .main-content {
+            padding: 30px 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .db-section {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #ff4500;
+            text-shadow: 0 0 10px rgba(255, 69, 0, 0.5);
+        }
+
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .contact-card {
+            background: rgba(255, 69, 0, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 69, 0, 0.3);
+            position: relative;
+        }
+
+        .contact-card.online {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .contact-card.busy {
+            border-color: #ff8c00;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+        }
+
+        .contact-card.offline {
+            border-color: #ff0000;
+            opacity: 0.7;
+        }
+
+        .contact-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ff8c00;
+            margin-bottom: 10px;
+        }
+
+        .contact-info {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contact-status {
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .status-online { background: rgba(0, 255, 0, 0.8); color: black; }
+        .status-busy { background: rgba(255, 165, 0, 0.8); color: black; }
+        .status-offline { background: rgba(128, 128, 128, 0.8); color: white; }
+
+        .call-button {
+            background: #00aa00;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .call-button:hover {
+            background: #00dd00;
+            transform: scale(1.05);
+        }
+
+        .sms-button {
+            background: #0066cc;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sms-button:hover {
+            background: #0088ee;
+            transform: scale(1.05);
+        }
+
+        .add-contact-form {
+            background: rgba(255, 69, 0, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 69, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ff8c00;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #ff4500, #ff8c00);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(45deg, #ff6600, #ffaa00);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 69, 0, 0.3);
+        }
+
+        .teams-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .team-card {
+            background: rgba(255, 69, 0, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 69, 0, 0.3);
+        }
+
+        .team-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ff8c00;
+            margin-bottom: 15px;
+        }
+
+        .team-members {
+            margin-top: 10px;
+        }
+
+        .member-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 69, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .incidents-log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .incident-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: rgba(255, 69, 0, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #ff4500;
+        }
+
+        .incident-time {
+            font-weight: bold;
+            color: #ff8c00;
+            margin-right: 15px;
+            min-width: 80px;
+        }
+
+        .sync-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .sync-indicator.syncing {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .contacts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .teams-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-indicator" id="syncIndicator">
+        🔄 Synchronisation...
+    </div>
+
+    <div class="header">
+        <h1>⚡ CrisisCommand Center</h1>
+        <p>Base de Données Temps Réel - Eric Stedo Security Solutions</p>
+        <div class="firebase-status firebase-connecting" id="firebaseStatus">
+            🔄 Connexion Firebase en cours...
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Formulaire d'ajout de contact -->
+        <div class="db-section">
+            <h2 class="section-title">➕ Ajouter un Contact</h2>
+            <div class="add-contact-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prénom</label>
+                        <input type="text" id="prenom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="nom" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fonction</label>
+                        <select id="fonction">
+                            <option value="chef_equipe">Chef d'Équipe</option>
+                            <option value="agent_securite">Agent Sécurité</option>
+                            <option value="responsable_site">Responsable Site</option>
+                            <option value="police">Police Nationale</option>
+                            <option value="pompiers">Pompiers</option>
+                            <option value="samu">SAMU</option>
+                            <option value="direction">Direction</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Équipe</label>
+                        <select id="equipe">
+                            <option value="alpha">ALPHA - Sécurité Boutique</option>
+                            <option value="bravo">BRAVO - Intervention</option>
+                            <option value="charlie">CHARLIE - Périmètre</option>
+                            <option value="delta">DELTA - Support</option>
+                            <option value="externe">Services Externes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Téléphone Fixe</label>
+                        <input type="tel" id="tel_fixe" placeholder="01 XX XX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile</label>
+                        <input type="tel" id="mobile" placeholder="06 XX XX XX XX" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email">
+                    </div>
+                    <div class="form-group">
+                        <label>Canal Radio</label>
+                        <input type="text" id="canal_radio" placeholder="Canal 1">
+                    </div>
+                </div>
+                <button class="submit-btn" onclick="ajouterContact()">Ajouter Contact</button>
+            </div>
+        </div>
+
+        <!-- Liste des contacts -->
+        <div class="db-section">
+            <h2 class="section-title">📞 Répertoire d'Urgence</h2>
+            <div class="contacts-grid" id="contactsList">
+                <!-- Les contacts seront ajoutés dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Équipes -->
+        <div class="db-section">
+            <h2 class="section-title">👥 Équipes Opérationnelles</h2>
+            <div class="teams-section" id="teamsSection">
+                <!-- Les équipes seront mises à jour automatiquement -->
+            </div>
+        </div>
+
+        <!-- Log des incidents -->
+        <div class="db-section">
+            <h2 class="section-title">📝 Journal des Incidents</h2>
+            <div class="incidents-log" id="incidentsLog">
+                <!-- Les incidents seront ajoutés en temps réel -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Configuration Firebase (Tu devras remplacer par tes vraies clés)
+        const firebaseConfig = {
+            // DEMO CONFIG - Remplace par tes vraies clés Firebase
+            apiKey: "demo-api-key",
+            authDomain: "crisis-command-demo.firebaseapp.com",
+            databaseURL: "https://crisis-command-demo-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "crisis-command-demo",
+            storageBucket: "crisis-command-demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "demo-app-id"
+        };
+
+        // Variables globales
+        let database;
+        let contactsRef;
+        let incidentsRef;
+
+        // Simulation Firebase pour la démo (remplace par vraie config)
+        function initFirebaseDemo() {
+            console.log('🔥 Initialisation Firebase (MODE DÉMO)');
+            
+            // Simulation de l'état de connexion
+            setTimeout(() => {
+                document.getElementById('firebaseStatus').className = 'firebase-status firebase-connected';
+                document.getElementById('firebaseStatus').textContent = '✅ Firebase connecté (DÉMO)';
+                document.getElementById('syncIndicator').textContent = '✅ Synchronisé';
+            }, 2000);
+
+            // Charger des données de démonstration
+            loadDemoData();
+        }
+
+        function loadDemoData() {
+            const demoContacts = [
+                {
+                    id: 1,
+                    prenom: "Jean",
+                    nom: "Dubois",
+                    fonction: "chef_equipe",
+                    equipe: "alpha",
+                    mobile: "06 12 34 56 78",
+                    tel_fixe: "01 23 45 67 89",
+                    email: "j.dubois@security.fr",
+                    canal_radio: "Canal 1",
+                    statut: "online"
+                },
+                {
+                    id: 2,
+                    prenom: "Marie",
+                    nom: "Martin",
+                    fonction: "chef_equipe",
+                    equipe: "bravo",
+                    mobile: "06 87 65 43 21",
+                    tel_fixe: "01 98 76 54 32",
+                    email: "m.martin@security.fr",
+                    canal_radio: "Canal 2",
+                    statut: "busy"
+                },
+                {
+                    id: 3,
+                    prenom: "Police",
+                    nom: "Commissariat",
+                    fonction: "police",
+                    equipe: "externe",
+                    mobile: "06 11 22 33 44",
+                    tel_fixe: "01 40 50 60 70",
+                    email: "contact@police92.fr",
+                    canal_radio: "Police 1",
+                    statut: "online"
+                }
+            ];
+
+            demoContacts.forEach(contact => {
+                afficherContact(contact);
+            });
+
+            updateTeamsDisplay();
+            
+            // Ajouter quelques incidents de démo
+            ajouterIncident("Connexion système établie", "INFO");
+            ajouterIncident("Équipes ALPHA et BRAVO opérationnelles", "STATUS");
+        }
+
+        function ajouterContact() {
+            const prenom = document.getElementById('prenom').value;
+            const nom = document.getElementById('nom').value;
+            const fonction = document.getElementById('fonction').value;
+            const equipe = document.getElementById('equipe').value;
+            const mobile = document.getElementById('mobile').value;
+            const tel_fixe = document.getElementById('tel_fixe').value;
+            const email = document.getElementById('email').value;
+            const canal_radio = document.getElementById('canal_radio').value;
+
+            if (!prenom || !nom || !mobile) {
+                alert('⚠️ Prénom, nom et mobile sont obligatoires');
+                return;
+            }
+
+            const contact = {
+                id: Date.now(),
+                prenom,
+                nom,
+                fonction,
+                equipe,
+                mobile,
+                tel_fixe,
+                email,
+                canal_radio,
+                statut: 'online',
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('➕ Nouveau contact ajouté:', contact);
+            afficherContact(contact);
+            
+            // Vider le formulaire
+            document.querySelectorAll('.add-contact-form input').forEach(input => input.value = '');
+            
+            // Ajouter à l'historique
+            ajouterIncident(`Contact ajouté: ${prenom} ${nom} (${fonction})`, 'ADD');
+            
+            updateTeamsDisplay();
+            
+            // Simulation de synchronisation
+            showSyncIndicator();
+        }
+
+        function afficherContact(contact) {
+            const contactsList = document.getElementById('contactsList');
+            
+            const contactCard = document.createElement('div');
+            contactCard.className = `contact-card ${contact.statut}`;
+            contactCard.innerHTML = `
+                <div class="contact-name">${contact.prenom} ${contact.nom}</div>
+                <div class="contact-status status-${contact.statut}">
+                    ${contact.statut === 'online' ? 'DISPONIBLE' : 
+                      contact.statut === 'busy' ? 'OCCUPÉ' : 'HORS LIGNE'}
+                </div>
+                <div class="contact-info">
+                    <span>📱</span> <strong>Mobile:</strong> ${contact.mobile}
+                </div>
+                ${contact.tel_fixe ? `<div class="contact-info"><span>☎️</span> <strong>Fixe:</strong> ${contact.tel_fixe}</div>` : ''}
+                <div class="contact-info">
+                    <span>💼</span> <strong>Fonction:</strong> ${getFonctionLabel(contact.fonction)}
+                </div>
+                <div class="contact-info">
+                    <span>👥</span> <strong>Équipe:</strong> ${getEquipeLabel(contact.equipe)}
+                </div>
+                ${contact.canal_radio ? `<div class="contact-info"><span>📻</span> <strong>Radio:</strong> ${contact.canal_radio}</div>` : ''}
+                <div style="margin-top: 15px;">
+                    <button class="call-button" onclick="appelerContact('${contact.mobile}', '${contact.prenom} ${contact.nom}')">
+                        📞 Appeler
+                    </button>
+                    <button class="sms-button" onclick="envoyerSMS('${contact.mobile}', '${contact.prenom} ${contact.nom}')">
+                        💬 SMS
+                    </button>
+                </div>
+            `;
+            
+            contactsList.appendChild(contactCard);
+        }
+
+        function getFonctionLabel(fonction) {
+            const labels = {
+                'chef_equipe': 'Chef d\'Équipe',
+                'agent_securite': 'Agent Sécurité',
+                'responsable_site': 'Responsable Site',
+                'police': 'Police Nationale',
+                'pompiers': 'Pompiers',
+                'samu': 'SAMU',
+                'direction': 'Direction',
+                'maintenance': 'Maintenance'
+            };
+            return labels[fonction] || fonction;
+        }
+
+        function getEquipeLabel(equipe) {
+            const labels = {
+                'alpha': 'ALPHA - Sécurité',
+                'bravo': 'BRAVO - Intervention',
+                'charlie': 'CHARLIE - Périmètre',
+                'delta': 'DELTA - Support',
+                'externe': 'Services Externes'
+            };
+            return labels[equipe] || equipe;
+        }
+
+        function appelerContact(numero, nom) {
+            console.log('📞 Appel vers:', nom, numero);
+            ajouterIncident(`Appel initié vers ${nom} (${numero})`, 'CALL');
+            alert(`📞 Appel en cours vers ${nom}\n${numero}`);
+        }
+
+        function envoyerSMS(numero, nom) {
+            console.log('💬 SMS vers:', nom, numero);
+            const message = prompt(`💬 Message à envoyer à ${nom}:`);
+            if (message) {
+                ajouterIncident(`SMS envoyé à ${nom}: "${message.substring(0, 30)}..."`, 'SMS');
+                alert(`✅ SMS envoyé à ${nom}`);
+            }
+        }
+
+        function ajouterIncident(message, type) {
+            const incidentsLog = document.getElementById('incidentsLog');
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0') + ':' +
+                           now.getSeconds().toString().padStart(2, '0');
+            
+            const incidentItem = document.createElement('div');
+            incidentItem.className = 'incident-item';
+            incidentItem.innerHTML = `
+                <div class="incident-time">${timeStr}</div>
+                <div class="incident-content">
+                    <strong>[${type}]</strong> ${message}
+                </div>
+            `;
+            
+            incidentsLog.insertBefore(incidentItem, incidentsLog.firstChild);
+            
+            // Limiter à 50 incidents pour les performances
+            while (incidentsLog.children.length > 50) {
+                incidentsLog.removeChild(incidentsLog.lastChild);
+            }
+        }
+
+        function updateTeamsDisplay() {
+            const teamsSection = document.getElementById('teamsSection');
+            // Cette fonction mettrait à jour l'affichage des équipes
+            // basé sur les contacts ajoutés
+        }
+
+        function showSyncIndicator() {
+            const indicator = document.getElementById('syncIndicator');
+            indicator.className = 'sync-indicator syncing';
+            indicator.textContent = '🔄 Synchronisation...';
+            
+            setTimeout(() => {
+                indicator.className = 'sync-indicator';
+                indicator.textContent = '✅ Synchronisé';
+            }, 1500);
+        }
+
+        // Initialisation
+        window.addEventListener('load', function() {
+            console.log('⚡ CrisisCommand Center avec Firebase initialisé');
+            console.log('👨‍💼 Opérateur: Eric Stedo - Base de Données Sécurité');
+            
+            // Initialiser Firebase (mode démo)
+            initFirebaseDemo();
+            
+            console.log('📋 Instructions de configuration Firebase:');
+            console.log('1. Créer un projet sur https://firebase.google.com');
+            console.log('2. Activer Realtime Database');
+            console.log('3. Remplacer firebaseConfig avec tes vraies clés');
+            console.log('4. Configurer les règles de sécurité');
+        });
+    </script>
+</body>
+</html>
